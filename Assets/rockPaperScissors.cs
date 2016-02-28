@@ -22,13 +22,16 @@ public static class MyStaticValues
 * moveRobotHand function.
 */
 public class rockPaperScissors : MonoBehaviour
-{  
+{
     public Thread gameThread;
     public Thread resultsThread;
-    private string gameResults; 
+    private string gameResults;
     public bool resultsShown = false;
     public ToggleButtonDataBinder playingButton; // true = game is going, false = game waiting for button press
+    public ToggleButtonDataBinder handMirrorButton; // true = hand mirroring, false = no hand mirroring
     SerialPort serialPort;
+    HandMirror handMirror;
+    bool handMirrorMode;
 
 
     /**
@@ -36,25 +39,12 @@ public class rockPaperScissors : MonoBehaviour
      */
     void Start()
     {
-       /* SerialPort stream = new SerialPort("COM5", 9600);
-        stream.ReadTimeout = 50;
-        stream.Open();
-        Debug.Log("opened");
-        try
-        {
-            Debug.Log("in try");
-            stream.WriteLine("rock");
-            stream.BaseStream.Flush();
-
-        }
-        catch (System.IO.IOException exception)
-        {
-            Debug.Log("Couldn't open port!");
-        }*/
-
-        // Set initial states of the main button and text
+        // Set initial states of the buttons and text
         playingButton.SetCurrentData(false);
+        handMirrorButton.SetCurrentData(false);
         GetComponent<TextMesh>().text = "Press 'Start' to play";
+        handMirror = new HandMirror();
+        handMirrorMode = false; // If the user is in handMirrorMode
     }
 
     /**
@@ -68,9 +58,9 @@ public class rockPaperScissors : MonoBehaviour
         {
             GetComponent<TextMesh>().text = "Press 'Start' to play";
         }
-        
-        // Once the playing button is pressed
-        if(playingButton.GetCurrentData())
+
+        // Once the playing button is pressed (can't be in hand mirroring mode)
+        if (playingButton.GetCurrentData() && !handMirrorButton.GetCurrentData())
         {
             resultsShown = false;
             GetComponent<TextMesh>().text = "game started...";
@@ -95,6 +85,25 @@ public class rockPaperScissors : MonoBehaviour
             StartCoroutine(displayResults());
             MyStaticValues.doneWithThread = false;
         }
+
+        // If the hand mirroring button is pressed (can't be playing rps game)
+        if (handMirrorButton.GetCurrentData() && !handMirrorMode && !playingButton.GetCurrentData())
+        {
+            handMirrorMode = true;
+            Debug.Log("in hand Mirroring if");
+            handMirror.start();
+            Debug.Log("after start");
+
+        }
+
+        // If hand mirroring button is NOT pressed
+        if (!handMirrorButton.GetCurrentData() && handMirrorMode)
+        {
+            Debug.Log(" in end if");
+
+            handMirror.end();
+            handMirrorMode = false; 
+        }
     }
 
     /**
@@ -118,13 +127,7 @@ public class rockPaperScissors : MonoBehaviour
     {
         Debug.Log("in theGame function");
         String robotMove = getRobotMove();
-
         String userMove = getUserMove(robotMove);
-        Debug.Log("here");
-
-        
-        Debug.Log("here2");
-
         String winner = "";
 
         // If there is a tie
@@ -170,10 +173,10 @@ public class rockPaperScissors : MonoBehaviour
         }
 
         // Sets the gameResults
-        gameResults ="The human did a " + userMove + "\nThe robot did a " + robotMove + "\n\n";
+        gameResults = "The human did a " + userMove + "\nThe robot did a " + robotMove + "\n\n";
         if (winner.Equals("tie"))
         {
-           gameResults += "It is a tie!";
+            gameResults += "It is a tie!";
         }
         else
         {
@@ -191,7 +194,7 @@ public class rockPaperScissors : MonoBehaviour
     public String getUserMove(String robotMove)
     {
         bool ready = false;
-        SampleListener listener = new SampleListener();
+        HandListener listener = new HandListener();
         Controller controller = new Controller();
         controller.AddListener(listener);
 
@@ -201,8 +204,12 @@ public class rockPaperScissors : MonoBehaviour
             // Wait until ready to get move
             if (MyStaticValues.count > 4)
             {
-               // moveRobotHand(robotMove);
-                Thread.Sleep(1500);
+
+                /**** ONLY ONE OF THESE LINES SHOULD BE UNCOMMENTED. ****/
+                /****      EACH HAS ABOUT THE SAME TIME DELAY        ****/
+                // moveRobotHand(robotMove); // Uncoment this line if the robot arm is attached
+                Thread.Sleep(1500); // Uncomment this line if the robot arm is  NOT attached
+
                 ready = true;
                 MyStaticValues.count = 0;
             }
@@ -222,7 +229,6 @@ public class rockPaperScissors : MonoBehaviour
     public String getRobotMove()
     {
         String move;
-        String cMove; // Take this out, it is not used anymore
 
         // Get random number 1-3    
         System.Random rnd = new System.Random();
@@ -234,25 +240,20 @@ public class rockPaperScissors : MonoBehaviour
         {
             case 1:
                 move = "rock";
-                cMove = "r";
                 break;
             case 2:
                 move = "paper";
-                cMove = "p";
                 break;
             case 3:
                 move = "scissors";
-                cMove = "s";
                 break;
             default:
                 move = "rock";
-                cMove = "r";
                 break;
         }
 
-        // Send move to robotic hand
+        // Send move to robotic hand  // THIS WAS MOVED TO GET USER MOVE FOR TIMING 
         //moveRobotHand(move);
-        
 
         // Return move
         return move;
@@ -274,7 +275,6 @@ public class rockPaperScissors : MonoBehaviour
             Debug.Log("in try");
             stream.WriteLine(move);
             stream.BaseStream.Flush();
-
         }
         catch (System.IO.IOException exception)
         {
@@ -289,7 +289,7 @@ public class rockPaperScissors : MonoBehaviour
  * is created it continually gets frames from the camera until the listener is
  * removed.
  */
-class SampleListener : Listener
+class HandListener : Listener
 {
     public String move = "";
     bool goingDown = false;
@@ -351,6 +351,7 @@ class SampleListener : Listener
                 }
             }
         }
+
         /************* DETERMINES THE USERS MOVE BASED OFF OF HAND SHAPE *************/
 
         // Used to check for "rock"

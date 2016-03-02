@@ -3,7 +3,6 @@ using Leap;
 using System;
 using System.Threading;
 using System.Collections;
-
 using System.IO.Ports;
 
 /**
@@ -24,15 +23,15 @@ public static class MyStaticValues
 public class rockPaperScissors : MonoBehaviour
 {
     public Thread gameThread;
-    public Thread resultsThread;
+    //public Thread resultsThread;
     private string gameResults;
     public bool resultsShown = false;
     public ToggleButtonDataBinder playingButton; // true = game is going, false = game waiting for button press
     public ToggleButtonDataBinder handMirrorButton; // true = hand mirroring, false = no hand mirroring
-    SerialPort serialPort;
+    //SerialPort serialPort;
     HandMirror handMirror;
-    bool handMirrorMode;
-
+    public bool handMirrorMode;
+    public bool rpsMode;
 
     /**
      * This is run once when the game first starts.
@@ -45,6 +44,7 @@ public class rockPaperScissors : MonoBehaviour
         GetComponent<TextMesh>().text = "Press 'Start' to play";
         handMirror = new HandMirror();
         handMirrorMode = false; // If the user is in handMirrorMode
+        rpsMode = false; // If the user is in rpsMode 
     }
 
     /**
@@ -60,20 +60,11 @@ public class rockPaperScissors : MonoBehaviour
         }
 
         // Once the playing button is pressed (can't be in hand mirroring mode)
-        if (playingButton.GetCurrentData() && !handMirrorButton.GetCurrentData())
+        if (playingButton.GetCurrentData() && !rpsMode && !handMirrorButton.GetCurrentData())
         {
+            rpsMode = true; // User is in rps mode
             resultsShown = false;
-            GetComponent<TextMesh>().text = "game started...";
-
-            // Start the game thread
-            gameThread = new Thread(theGame);
-            gameThread.Start();
-            // We don't have a join here so that the leap thread will continue to run
-            // This allows the hand to still be displayed during the game
-            Debug.Log("Starting game thread...");
-
-            // Set false so only one game thread is started
-            playingButton.SetCurrentData(false);
+            StartCoroutine(gameCountDown());
         }
 
         // Runs once the game thread is done
@@ -83,27 +74,52 @@ public class rockPaperScissors : MonoBehaviour
             // be displayed
             GetComponent<TextMesh>().text = gameResults;
             StartCoroutine(displayResults());
+            playingButton.SetCurrentData(false); // Turn button off
+            rpsMode = false; // Game is done so user is not in rps mode anymore
             MyStaticValues.doneWithThread = false;
         }
 
         // If the hand mirroring button is pressed (can't be playing rps game)
-        if (handMirrorButton.GetCurrentData() && !handMirrorMode && !playingButton.GetCurrentData())
+        if (handMirrorButton.GetCurrentData() && !handMirrorMode && !rpsMode)
         {
             handMirrorMode = true;
             Debug.Log("in hand Mirroring if");
             handMirror.start();
+            // moveRobotHand("MIDDLEOPEN");
             Debug.Log("after start");
-
         }
 
         // If hand mirroring button is NOT pressed
         if (!handMirrorButton.GetCurrentData() && handMirrorMode)
         {
             Debug.Log(" in end if");
-
             handMirror.end();
-            handMirrorMode = false; 
+            handMirrorMode = false;
         }
+    }
+
+    /**
+     *
+     */
+    public IEnumerator gameCountDown()
+    {
+        GetComponent<TextMesh>().text = "Do move in";
+        yield return new WaitForSeconds(1f); // waits 1 second
+        GetComponent<TextMesh>().text = "3";
+        yield return new WaitForSeconds(1f); // waits 1 second
+        GetComponent<TextMesh>().text = "2";
+        yield return new WaitForSeconds(1f); // waits 1 second
+        GetComponent<TextMesh>().text = "1";
+        yield return new WaitForSeconds(1f); // waits 1 second
+        GetComponent<TextMesh>().text = "shoot!";
+        // yield return new WaitForSeconds(1f); // waits 1 second
+
+        // Start the game thread
+        gameThread = new Thread(theGame);
+        gameThread.Start();
+        // We don't have a join here so that the leap thread will continue to run
+        // This allows the hand to still be displayed during the game
+        Debug.Log("Starting game thread...");
     }
 
     /**
@@ -197,28 +213,31 @@ public class rockPaperScissors : MonoBehaviour
         HandListener listener = new HandListener();
         Controller controller = new Controller();
         controller.AddListener(listener);
-
+        //string move = listener.move;
         // Keep this process running until user makes thier move
-        while (!ready)
-        {
-            // Wait until ready to get move
-            if (MyStaticValues.count > 4)
-            {
+        /* while (!ready)
+         {
+             // Wait until ready to get move
+             if (MyStaticValues.count > 4)
+             {
 
-                /**** ONLY ONE OF THESE LINES SHOULD BE UNCOMMENTED. ****/
-                /****      EACH HAS ABOUT THE SAME TIME DELAY        ****/
-                // moveRobotHand(robotMove); // Uncoment this line if the robot arm is attached
-                Thread.Sleep(1500); // Uncomment this line if the robot arm is  NOT attached
+                 /**** ONLY ONE OF THESE LINES SHOULD BE UNCOMMENTED. ****/
+        /****      EACH HAS ABOUT THE SAME TIME DELAY        ****/
+       // moveRobotHand(robotMove); // Uncoment this line if the robot arm is attached
+        /*   Thread.Sleep(1500); // Uncomment this line if the robot arm is  NOT attached
 
-                ready = true;
-                MyStaticValues.count = 0;
-            }
-        }
+           ready = true;
+           MyStaticValues.count = 0;
+       }
+   }*/
+        Thread.Sleep(1000);
+        string move = listener.move;
+        Debug.Log("move is " + move);//////////
 
         controller.RemoveListener(listener);
         controller.Dispose();
 
-        return listener.move;
+        return move;
     }
 
     /**
@@ -281,6 +300,7 @@ public class rockPaperScissors : MonoBehaviour
             Debug.Log("Couldn't open port!");
             Debug.Log(exception);
         }
+        stream.Close();
     }
 }
 

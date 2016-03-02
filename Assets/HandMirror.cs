@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Leap;
 using UnityEngine;
+using System.IO.Ports;
 
 
 /**
@@ -22,11 +23,6 @@ public class HandMirror
           listener = new HandMirrorListner();
           controller = new Controller();
           controller.AddListener(listener);
-
-        // Keep this process running the hand mirroring button is turned off
-        // Console.WriteLine("Press Enter to quit...");
-        // Console.ReadLine();
-
     }
 
     public void end()
@@ -45,6 +41,9 @@ public class HandMirrorListner : Listener
 {
     int count = 0;
     private System.Object thisLock2 = new System.Object();
+
+    SerialPort stream = new SerialPort("COM5", 9600);
+    
 
     private void SafeWriteLine(String line)
     {
@@ -68,10 +67,19 @@ public class HandMirrorListner : Listener
         String fingerStatus = "";
 
         count++;
-        if (count > 10)
+        if (count > 40)
         {
-            foreach (Finger finger in fingers)
-            {
+            Debug.Log("before before opened");
+
+            stream.ReadTimeout = 50;
+            Debug.Log("before opened");
+            stream.Open();
+            Debug.Log("opened");
+         //   Finger finger = fingers[0];
+
+           foreach (Finger finger in fingers)
+           {
+          
                 if (finger.IsExtended)
                 {
                     fingerStatus = "OPEN";
@@ -80,8 +88,32 @@ public class HandMirrorListner : Listener
                 {
                     fingerStatus = "CLOSED";
                 }
-                Debug.Log(finger.Type + "_" + fingerStatus);
+
+                char[] delimiterChars = { '_' };
+                String fingerType = finger.Type.ToString();
+                String[] fingerParts = fingerType.Split('_');
+                Debug.Log(fingerParts[1] + fingerStatus);
+
+                       
+                try
+                {
+                    Debug.Log("in try");
+                    stream.WriteLine(fingerParts[1] + fingerStatus);
+                    stream.BaseStream.Flush();
+                }
+                catch (System.IO.IOException exception)
+                {
+                    Debug.Log("Couldn't open port!");
+                    Debug.Log(exception);
+                }
+
+
+
+
+
             }
+
+            stream.Close();
             count = 0;
         }
     }

@@ -8,14 +8,20 @@ using System.IO.Ports;
 
 
 /**
- *
+ * This class is intended to be used with a robotic arm and a Leap Motion camera. 
+ * A listener is created to get the finger positions of the users hand from the 
+ * Leap Motion camera.
  */
 public class HandMirror
 {
     public bool doneWithHandMirroring = false;
     HandMirrorListner listener;
     Controller controller;
-
+   
+    /**
+     * This method initiates the hand mirroring listener. The listener will 
+     * continue to run until the end() method is called.
+     */
     public void start()
     {
         Debug.Log("in start");
@@ -25,6 +31,10 @@ public class HandMirror
           controller.AddListener(listener);
     }
 
+    /**
+     * This method ends the hand mirroring listener. This method should
+     * be called when the user wants to turn off the hand mirroring mode.
+     */
     public void end()
     {
         Debug.Log("in end");
@@ -35,16 +45,15 @@ public class HandMirror
 }
 
 /**
- *
+ * This class is a listener that has the purpose of getting the fingure posistions
+ * of a hand. These positions are read from the Leap Motion camera every frame.
  */
 public class HandMirrorListner : Listener
 {
-    int count = 0;
+    int count = 0; // count is used to limit the rate of frames read
     private System.Object thisLock2 = new System.Object();
-
     SerialPort stream = new SerialPort("COM5", 9600);
     
-
     private void SafeWriteLine(String line)
     {
         lock (thisLock2)
@@ -53,12 +62,18 @@ public class HandMirrorListner : Listener
         }
     }
 
+    /**
+    * This method executes when the listener first connects to the camera.
+    */
     public override void OnConnect(Controller controller)
     {
         SafeWriteLine("Connected");
     }
 
-
+    /**
+    * This method is called on every camera frame. In this method the position of each
+    * finger is sent throug a serial port to the robot arm.  
+    */
     public override void OnFrame(Controller controller)
     {
         Frame frame = controller.Frame();
@@ -67,7 +82,7 @@ public class HandMirrorListner : Listener
         String fingerStatus = "";
 
         count++;
-        if (count > 40)
+        if (count > 30)
         {
             Debug.Log("before before opened");
 
@@ -93,8 +108,7 @@ public class HandMirrorListner : Listener
                 String fingerType = finger.Type.ToString();
                 String[] fingerParts = fingerType.Split('_');
                 Debug.Log(fingerParts[1] + fingerStatus);
-
-                       
+                  
                 try
                 {
                     Debug.Log("in try");
@@ -106,11 +120,6 @@ public class HandMirrorListner : Listener
                     Debug.Log("Couldn't open port!");
                     Debug.Log(exception);
                 }
-
-
-
-
-
             }
 
             stream.Close();

@@ -52,7 +52,7 @@ public class HandMirrorListner : Listener
 {
     int count = 0; // count is used to limit the rate of frames read
     private System.Object thisLock2 = new System.Object();
-    SerialPort stream = new SerialPort("COM5", 9600);
+    SerialPort stream = new SerialPort("COM4", 9600); // change to COM4 for little computer and  COM5 for mine
     
     private void SafeWriteLine(String line)
     {
@@ -81,6 +81,7 @@ public class HandMirrorListner : Listener
         FingerList fingers = hand.Fingers;
         String fingerStatus = "";
 
+        // Use count so that we only send data to the serial port every 30 frames
         count++;
         if (count > 30)
         {
@@ -90,8 +91,8 @@ public class HandMirrorListner : Listener
             Debug.Log("before opened");
             stream.Open();
             Debug.Log("opened");
-         //   Finger finger = fingers[0];
 
+            // Check each finger to see if it is extended
            foreach (Finger finger in fingers)
            {
           

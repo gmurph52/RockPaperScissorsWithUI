@@ -113,7 +113,7 @@ public class Movie : MonoBehaviour
      */
     public void moveMovieIn()
     {
-        transform.Translate(15, 0, 5);
+        transform.Translate(15, 0, 0);
     }
 
     /**
@@ -121,6 +121,6 @@ public class Movie : MonoBehaviour
      */
     public void moveMovieOut()
     {
-        transform.Translate(-15, 0, -5);
+        transform.Translate(-15, 0, 0);
     }
 }

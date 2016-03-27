@@ -95,7 +95,6 @@ public class HandMirrorListner : Listener
             // Check each finger to see if it is extended
            foreach (Finger finger in fingers)
            {
-          
                 if (finger.IsExtended)
                 {
                     fingerStatus = "OPEN";
@@ -105,7 +104,7 @@ public class HandMirrorListner : Listener
                     fingerStatus = "CLOSED";
                 }
 
-                char[] delimiterChars = { '_' };
+               // char[] delimiterChars = { '_' };///////////////////////////////////////////////// remove this line
                 String fingerType = finger.Type.ToString();
                 String[] fingerParts = fingerType.Split('_');
                 Debug.Log(fingerParts[1] + fingerStatus);

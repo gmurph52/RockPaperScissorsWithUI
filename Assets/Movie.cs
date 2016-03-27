@@ -36,6 +36,7 @@ public class Movie : MonoBehaviour
      */
     void Start()
     {
+        materials = new Material[7];
         paperRock = materials[0].mainTexture as MovieTexture;
         paperScissors = materials[1].mainTexture as MovieTexture;
         rockPaper = materials[2].mainTexture as MovieTexture;

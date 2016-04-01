@@ -86,7 +86,7 @@ public class rockPaperScissors : MonoBehaviour
         // Once the game results have been shown and it's time for a new game 
         if (resultsShown == true)
         {
-            GetComponent<TextMesh>().text = "Press 'Start' to play";
+            GetComponent<TextMesh>().text = "Press a button\nto play";
             rpsMode = false; // Game is done so user is not in rps mode anymore
         }
 
@@ -168,11 +168,11 @@ public class rockPaperScissors : MonoBehaviour
     public IEnumerator gameCountDown()
     {
         GetComponent<TextMesh>().text = "Ready?";
-        yield return new WaitForSeconds(.7f); // waits 1 second
+        yield return new WaitForSeconds(.7f); // waits .7 second
         /***********   UNCOMMENT IF ROBOT ARM IS ATTACHED   *************/
         moveRobotHand("COUNTDOWN");
         audio.PlayOneShot(countDownSound);
-        yield return new WaitForSeconds(.3f); // waits 1 second
+        yield return new WaitForSeconds(.3f); // waits .3 second
         GetComponent<TextMesh>().text = "Rock";
         //SystemSounds.Beep.Play();
         yield return new WaitForSeconds(1f); // waits 1 second

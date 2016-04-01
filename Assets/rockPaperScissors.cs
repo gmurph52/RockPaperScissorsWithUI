@@ -40,6 +40,8 @@ public class rockPaperScissors : MonoBehaviour
     public bool rpsMode;
     public AudioClip toggleSound;
     public AudioClip countDownSound;
+
+    private int timer;
     
     /**
      * This is run once when the game first starts.
@@ -51,7 +53,8 @@ public class rockPaperScissors : MonoBehaviour
         handMirrorButton.SetCurrentData(false);
         doneWithThread = false;
         resultsShown = false;
-        GetComponent<TextMesh>().text = "Press 'Start' to play";
+        GetComponent<TextMesh>().text = "Press a button\nto play";
+        
         handMirror = new HandMirror();
         handMirrorMode = false; // If the user is in handMirrorMode
         rpsMode = false; // If the user is in rpsMode 
@@ -63,8 +66,7 @@ public class rockPaperScissors : MonoBehaviour
         // For sound clips
         audio = GetComponent<AudioSource>();
 
-        // this dosen't work. Why????
-        Console.Beep(5000, 1000);
+        timer = 0;
     }
 
     /**
@@ -73,6 +75,14 @@ public class rockPaperScissors : MonoBehaviour
      */
     void Update()
     {
+        // If no one uses game for 3 minutes move the hand 
+        timer++; 
+        if (timer >= 60000) // takes around 10 minutes  
+        {
+            moveRobotHand("WAVE");
+            timer = 0;
+        }
+
         // Once the game results have been shown and it's time for a new game 
         if (resultsShown == true)
         {
@@ -87,7 +97,6 @@ public class rockPaperScissors : MonoBehaviour
             rpsMode = true; // User is in rps mode
             resultsShown = false;
             StartCoroutine(gameCountDown()); // starts the rps games
-
         }
 
         // Runs once the game thread is done
@@ -117,7 +126,7 @@ public class rockPaperScissors : MonoBehaviour
             handMirrorMode = true;
             Debug.Log("in hand Mirroring if");
             handMirror.start();
-            Debug.Log("after start");
+            Debug.Log("after start");           
         }
 
         // If hand mirroring button is turned off
@@ -134,11 +143,13 @@ public class rockPaperScissors : MonoBehaviour
         if(rpsMode)
         {
             handMirrorButton.SetCurrentData(false);
+            timer = 0;
         }
 
         // Don't allow user to press play button while in rpsMode
         if (handMirrorMode)
         {
+            timer = 0;
             playingButton.SetCurrentData(false);
         }
 
@@ -156,26 +167,23 @@ public class rockPaperScissors : MonoBehaviour
      */
     public IEnumerator gameCountDown()
     {
-        
-
-
-        GetComponent<TextMesh>().text = "Do move in";
+        GetComponent<TextMesh>().text = "Ready?";
         yield return new WaitForSeconds(.7f); // waits 1 second
         /***********   UNCOMMENT IF ROBOT ARM IS ATTACHED   *************/
-        // moveRobotHand("COUNTDOWN");
-        //audio.PlayOneShot(countDownSound);
+        moveRobotHand("COUNTDOWN");
+        audio.PlayOneShot(countDownSound);
         yield return new WaitForSeconds(.3f); // waits 1 second
-        GetComponent<TextMesh>().text = "3";
-        SystemSounds.Beep.Play();
+        GetComponent<TextMesh>().text = "Rock";
+        //SystemSounds.Beep.Play();
         yield return new WaitForSeconds(1f); // waits 1 second
-        GetComponent<TextMesh>().text = "2";
-        SystemSounds.Beep.Play();
+        GetComponent<TextMesh>().text = "Paper";
+        //SystemSounds.Beep.Play();
         yield return new WaitForSeconds(1f); // waits 1 second
-        GetComponent<TextMesh>().text = "1";
-        SystemSounds.Beep.Play();
+        GetComponent<TextMesh>().text = "Scissors";
+        //SystemSounds.Beep.Play();
         yield return new WaitForSeconds(1f); // waits .5 second
-        GetComponent<TextMesh>().text = "shoot!";
-        SystemSounds.Beep.Play();
+        GetComponent<TextMesh>().text = "Shoot!";
+        //SystemSounds.Beep.Play();
 
         // Start the game thread
         gameThread = new Thread(theGame);
@@ -396,7 +404,7 @@ public class rockPaperScissors : MonoBehaviour
             gameResults += "The " + winner + " wins!!!!\n";
         }
 
-        // Wait 2 seconds so user has time to see the robots move before showing reults
+        // Wait 1 seconds so user has time to see the robots move before showing reults
         Thread.Sleep(2000);
 
         // Set to true so we know the game is over
@@ -414,11 +422,10 @@ public class rockPaperScissors : MonoBehaviour
         controller.AddListener(listener);
 
         /****      UNCOMMENT WITH ROBOT ARM    ****/
-        //moveRobotHand(robotMove); // Uncoment this line if the robot arm is attached
-        //Thread.Sleep(100); // Give time for the listener to grab the users move
+        moveRobotHand(robotMove); // Uncoment this line if the robot arm is attached
 
-        /****      UNCOMMENT WITH OUT ROBOT ARM    ****/
-         Thread.Sleep(1000); // Uncomment this line if the robot arm is  NOT attached
+        Thread.Sleep(1000); // Wait a second to get a more more accuate capture of human hand 
+                            // (sometimes people are slow at first so this gives them an extra sec.)
 
         string move = listener.move;
 

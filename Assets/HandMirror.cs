@@ -104,7 +104,6 @@ public class HandMirrorListner : Listener
                     fingerStatus = "CLOSED";
                 }
 
-               // char[] delimiterChars = { '_' };///////////////////////////////////////////////// remove this line
                 String fingerType = finger.Type.ToString();
                 String[] fingerParts = fingerType.Split('_');
                 Debug.Log(fingerParts[1] + fingerStatus);
